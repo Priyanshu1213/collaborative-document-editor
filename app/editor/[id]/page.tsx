@@ -7,7 +7,7 @@ import { documentService } from '@/services/documentService';
 import { syncService } from '@/services/syncService';
 import { useSocket } from '@/hooks/useSocket';
 import { useOffline } from '@/hooks/useOffline';
-import { Save, Share2, MoreVertical, Users, ChevronLeft, Cloud, CloudOff, Wifi, WifiOff } from 'lucide-react';
+import { Save, Share2, ChevronLeft, Wifi, WifiOff, Loader2, Check, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { toErrorMessage } from '@/lib/apiError';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -32,7 +32,8 @@ export default function EditorPage() {
   const [isOwner, setIsOwner] = useState(false);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
-  
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('saved');
+
   const currentUserId =
     typeof window !== 'undefined'
       ? JSON.parse(localStorage.getItem('user') || '{}')?.id
@@ -42,6 +43,14 @@ export default function EditorPage() {
   
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const syncCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Always-current snapshots so autosave never marks newer edits as "saved"
+  const contentRef = useRef(content);
+  contentRef.current = content;
+  const titleRef = useRef(title);
+  titleRef.current = title;
+  const unsavedChangesRef = useRef(unsavedChanges);
+  unsavedChangesRef.current = unsavedChanges;
 
   const fetchDocument = useCallback(async () => {
     try {
@@ -146,30 +155,67 @@ export default function EditorPage() {
     }
   }, [documentId, title, content, unsavedChanges]);
 
-  const handleAutoSave = useCallback(async () => {
-    if (!unsavedChanges || isOffline) return;
+  // Silent autosave — driven by the debounce effect. Shows status in the
+  // header instead of a toast so it doesn't interrupt while typing.
+  const autoSave = useCallback(async () => {
+    if (!isEditable) return;
 
+    const snapshotContent = contentRef.current;
+    const snapshotTitle = titleRef.current;
+
+    setSaveStatus('saving');
     setIsSaving(true);
     try {
-      await documentService.updateDocument(documentId, {
-        title,
-        content,
-      });
-      await syncService.cacheDocument(documentId, title, content);
-      void syncService.syncUnsyncedChanges();
-      
-      setUnsavedChanges(false);
-      toast.success('Document saved', { duration: 2000 });
-    } catch (error) {
-      if (!isOffline) {
-        toast.error('Failed to save document');
+      if (isOffline) {
+        await syncService.cacheDocument(documentId, snapshotTitle, snapshotContent);
+        await syncService.queueChange(documentId, snapshotContent, 'update', snapshotTitle);
+      } else {
+        await documentService.updateDocument(documentId, {
+          title: snapshotTitle,
+          content: snapshotContent,
+        });
+        await syncService.cacheDocument(documentId, snapshotTitle, snapshotContent);
+        void syncService.syncUnsyncedChanges();
       }
+
+      // Only mark clean if nothing changed while the save was in flight
+      if (contentRef.current === snapshotContent && titleRef.current === snapshotTitle) {
+        setUnsavedChanges(false);
+        setSaveStatus('saved');
+      } else {
+        setSaveStatus('unsaved');
+      }
+    } catch (error) {
+      setSaveStatus('error');
     } finally {
       setIsSaving(false);
     }
-  }, [documentId, title, content, unsavedChanges, isOffline]);
+  }, [documentId, isEditable, isOffline]);
+
+  // Debounced autosave: fire once the user pauses typing.
+  useEffect(() => {
+    if (!isEditable || !unsavedChanges) return;
+    const timer = setTimeout(() => {
+      void autoSave();
+    }, EDITOR_CONFIG.AUTO_SAVE_INTERVAL);
+    autoSaveTimerRef.current = timer;
+    return () => clearTimeout(timer);
+  }, [content, title, unsavedChanges, isEditable, autoSave]);
+
+  // Warn before leaving with unsaved changes.
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (unsavedChangesRef.current) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
 
   const handleSave = async () => {
+    setSaveStatus('saving');
     setIsSaving(true);
     try {
       if (isOffline) {
@@ -181,11 +227,13 @@ export default function EditorPage() {
           title,
           content,
         });
-        
+
         setUnsavedChanges(false);
         toast.success('Document saved');
       }
+      setSaveStatus('saved');
     } catch (error) {
+      setSaveStatus('error');
       toast.error(toErrorMessage(error, 'Failed to save document'));
     } finally {
       setIsSaving(false);
@@ -196,6 +244,7 @@ export default function EditorPage() {
     if (!isEditable) return;
     setContent(newContent);
     setUnsavedChanges(true);
+    setSaveStatus('unsaved');
     if (isConnected && !isOffline) {
       emit('content:change', {
         documentId,
@@ -206,8 +255,10 @@ export default function EditorPage() {
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isEditable) return;
     setTitle(e.target.value);
     setUnsavedChanges(true);
+    setSaveStatus('unsaved');
   };
 
   if (isLoading) {
@@ -244,11 +295,32 @@ export default function EditorPage() {
               placeholder="Untitled document"
             />
             <div className="flex shrink-0 items-center gap-2">
-              {unsavedChanges && (
-                <span className="hidden text-xs font-medium text-amber-600 dark:text-amber-400 sm:inline">
-                  Unsaved
-                </span>
-              )}
+              <span className="hidden items-center gap-1.5 text-xs font-medium sm:inline-flex">
+                {saveStatus === 'saving' && (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                    <span className="text-muted-foreground">Saving…</span>
+                  </>
+                )}
+                {saveStatus === 'saved' && (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    <span className="text-muted-foreground">Saved</span>
+                  </>
+                )}
+                {saveStatus === 'unsaved' && (
+                  <>
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                    <span className="text-amber-600 dark:text-amber-400">Unsaved changes</span>
+                  </>
+                )}
+                {saveStatus === 'error' && (
+                  <>
+                    <AlertCircle className="h-3.5 w-3.5 text-destructive" />
+                    <span className="text-destructive">Save failed</span>
+                  </>
+                )}
+              </span>
               {isOffline ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-400">
                   <WifiOff className="h-3 w-3" />
