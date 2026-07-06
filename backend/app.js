@@ -33,8 +33,6 @@ app.get("*", (req, res) => {
   if (req.path.startsWith("/api/")) {
     return res.status(404).json({ error: "Route not found" });
   }
-
-  return handleNextRequest(req, res);
 });
 
 // 404 Handler
