@@ -5,6 +5,7 @@ import {
   rewrite,
   fixGrammar,
   explain,
+  generate,
   healthCheck,
 } from '../controllers/aiController.js';
 
@@ -20,5 +21,6 @@ router.post('/summarize', summarize);
 router.post('/rewrite', rewrite);
 router.post('/grammar-fix', fixGrammar);
 router.post('/explain', explain);
+router.post('/generate', generate);
 
 export default router;

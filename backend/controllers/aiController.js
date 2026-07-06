@@ -81,6 +81,24 @@ export const explain = async (req, res) => {
   }
 };
 
+// Generate new content from a prompt
+export const generate = async (req, res) => {
+  try {
+    const { prompt, tone, format } = req.body;
+
+    if (!prompt || prompt.trim().length < 3) {
+      return res.status(400).json({ error: 'A prompt of at least 3 characters is required' });
+    }
+
+    const content = await aiService.generateContent(prompt.trim(), { tone, format });
+
+    res.json({ content });
+  } catch (error) {
+    console.error('[Generate Error]:', error);
+    res.status(500).json({ error: error.message || 'Failed to generate content' });
+  }
+};
+
 // Health check for AI service
 export const healthCheck = async (req, res) => {
   try {

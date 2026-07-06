@@ -1,8 +1,8 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { LogOut, Moon, Search, Sun, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { FileText, LogOut, Moon, Search, Sun } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface DashboardHeaderProps {
   userName: string;
@@ -15,6 +15,7 @@ export default function DashboardHeader({ userName, userEmail, onLogout, onSearc
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfileInfo, setShowProfileInfo] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem('theme') as 'light' | 'dark' | null;
@@ -35,6 +36,16 @@ export default function DashboardHeader({ userName, userEmail, onLogout, onSearc
     window.localStorage.setItem('theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setShowProfileInfo(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -42,25 +53,32 @@ export default function DashboardHeader({ userName, userEmail, onLogout, onSearc
   };
 
   return (
-    <header className="border-b border-border bg-background">
-      <div className="mx-auto max-w-6xl px-6 py-4">
+    <header className="sticky top-0 z-40 glass border-b border-border/60">
+      <div className="mx-auto max-w-6xl px-6 py-3.5">
         <div className="flex items-center justify-between gap-4">
           {/* Logo and Title */}
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">House of EdTech</h1>
-            <p className="text-sm text-muted-foreground">Welcome back, {userName}</p>
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-glow">
+              <FileText className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-semibold tracking-tight text-foreground">
+                House of EdTech
+              </h1>
+              <p className="truncate text-xs text-muted-foreground">Welcome back, {userName}</p>
+            </div>
           </div>
 
           {/* Search Bar */}
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+          <div className="hidden flex-1 justify-center px-4 md:flex">
+            <div className="relative w-full max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search documents..."
                 value={searchQuery}
                 onChange={handleSearch}
-                className="w-full rounded-lg border border-border bg-background pl-10 pr-4 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                className="h-10 w-full rounded-xl border border-input bg-background/60 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/60"
               />
             </div>
           </div>
@@ -69,28 +87,26 @@ export default function DashboardHeader({ userName, userEmail, onLogout, onSearc
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              size="sm"
+              size="icon-sm"
               onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-              className="gap-2"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
 
-            <div className="relative">
-              <Button
-                variant="outline"
-                size="sm"
+            <div className="relative" ref={profileRef}>
+              <button
                 onClick={() => setShowProfileInfo((prev) => !prev)}
-                className="gap-2"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-sm font-semibold text-white shadow-soft outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring/60"
+                aria-label="Profile"
               >
-                <User className="h-5 w-5" />
-              </Button>
+                {userName.charAt(0).toUpperCase()}
+              </button>
 
               {showProfileInfo && (
-                <div className="absolute right-0 z-10 mt-2 w-64 rounded-lg border border-border bg-background p-4 shadow-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
+                <div className="animate-float-up absolute right-0 z-10 mt-2 w-64 overflow-hidden rounded-2xl border border-border bg-popover shadow-elevated">
+                  <div className="flex items-center gap-3 p-4">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-gradient font-semibold text-white">
                       {userName.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
@@ -100,14 +116,37 @@ export default function DashboardHeader({ userName, userEmail, onLogout, onSearc
                       </p>
                     </div>
                   </div>
+                  <div className="border-t border-border p-2">
+                    <button
+                      onClick={onLogout}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
 
-            <Button variant="outline" size="sm" onClick={onLogout} className="gap-2">
+            <Button variant="outline" size="sm" onClick={onLogout} className="hidden gap-2 sm:inline-flex">
               <LogOut className="h-4 w-4" />
               Sign Out
             </Button>
+          </div>
+        </div>
+
+        {/* Mobile search */}
+        <div className="mt-3 md:hidden">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search documents..."
+              value={searchQuery}
+              onChange={handleSearch}
+              className="h-10 w-full rounded-xl border border-input bg-background/60 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/60"
+            />
           </div>
         </div>
       </div>

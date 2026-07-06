@@ -214,71 +214,79 @@ export default function DashboardPage() {
       />
 
       {/* Main Content */}
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        {/* Filter Tabs */}
-        <div className="mb-8 flex gap-2 border-b border-border">
-          <button
-            onClick={() => setFilterType('all')}
-            className={`px-4 py-2 font-medium transition-colors ${
-              filterType === 'all'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            All Documents
-          </button>
-          <button
-            onClick={() => setFilterType('owned')}
-            className={`px-4 py-2 font-medium transition-colors ${
-              filterType === 'owned'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            My Documents
-          </button>
-          <button
-            onClick={() => setFilterType('shared')}
-            className={`px-4 py-2 font-medium transition-colors ${
-              filterType === 'shared'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Shared with Me
-          </button>
-        </div>
-
-        {/* Create Document Section */}
-        <div className="mb-12">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-foreground">
+      <main className="mx-auto max-w-6xl px-6 py-10">
+        {/* Section header */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {filterType === 'all'
                 ? 'All Documents'
                 : filterType === 'owned'
                   ? 'My Documents'
                   : 'Shared with Me'}
             </h2>
-            <Button onClick={handleCreateDocument} className="gap-2">
-              <Plus className="h-4 w-4" /> New Document
-            </Button>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {isLoading
+                ? 'Loading your workspace…'
+                : `${filteredDocuments.length} document${filteredDocuments.length === 1 ? '' : 's'}`}
+            </p>
           </div>
+          <Button onClick={handleCreateDocument} size="lg" className="gap-2 shadow-glow">
+            <Plus className="h-4 w-4" /> New Document
+          </Button>
+        </div>
 
+        {/* Filter Tabs — segmented control */}
+        <div className="mb-8 inline-flex rounded-xl border border-border bg-muted/50 p-1">
+          {([
+            ['all', 'All'],
+            ['owned', 'My Documents'],
+            ['shared', 'Shared'],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() => setFilterType(value)}
+              className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-all ${
+                filterType === value
+                  ? 'bg-card text-foreground shadow-soft'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Documents */}
+        <div className="mb-12">
           {isLoading ? (
-            <div className="text-center text-muted-foreground">Loading documents...</div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-44 animate-pulse rounded-2xl border border-border bg-card/60"
+                />
+              ))}
+            </div>
           ) : filteredDocuments.length === 0 ? (
-            <div className="rounded-lg border-2 border-dashed border-border p-12 text-center">
-              <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <div className="flex flex-col items-center rounded-2xl border border-dashed border-border bg-card/40 p-14 text-center">
+              <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-inset ring-primary/15">
+                <FileText className="h-7 w-7" />
+              </span>
               <h3 className="mb-2 text-lg font-semibold text-foreground">No documents found</h3>
-              <p className="mb-6 text-muted-foreground">
-                {searchQuery ? 'Try adjusting your search query' : 'Create your first document to get started'}
+              <p className="mb-6 max-w-sm text-muted-foreground">
+                {searchQuery
+                  ? 'Try adjusting your search query to find what you are looking for.'
+                  : 'Create your first document to get started with House of EdTech.'}
               </p>
               {!searchQuery && (
-                <Button onClick={handleCreateDocument}>Create Document</Button>
+                <Button onClick={handleCreateDocument} size="lg" className="gap-2 shadow-glow">
+                  <Plus className="h-4 w-4" /> Create Document
+                </Button>
               )}
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredDocuments.map((doc) => (
                 <DocumentCard
                   key={doc._id}

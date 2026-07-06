@@ -41,6 +41,20 @@ ${text}`;
     return this.callAI(prompt, 'explain');
   }
 
+  async generateContent(request, { tone = '', format = '' } = {}) {
+    const toneLine = tone ? ` Write it in a ${tone} tone.` : '';
+    const formatLine = format ? ` Format the output as ${format}.` : '';
+
+    const prompt = `You are an expert writing assistant embedded in a document editor.
+Write high-quality content based on the request below.${toneLine}${formatLine}
+Use clear structure with short paragraphs. You may use Markdown for headings (#, ##), bold (**text**), and bullet lists (- item) where it improves readability.
+Output only the requested content — no preamble, no explanations, no surrounding quotes.
+
+Request: ${request}`;
+
+    return this.callAI(prompt, 'generate');
+  }
+
   async callAI(prompt, feature) {
     try {
       const provider = process.env.AI_PROVIDER || 'gemini';
@@ -64,30 +78,42 @@ ${text}`;
       throw new Error('GEMINI_API_KEY not configured');
     }
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1024,
+    const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      }),
-    });
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            // Higher budget so the model's reasoning tokens don't starve the output
+            maxOutputTokens: 2048,
+          },
+        }),
+      }
+    );
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.statusText}`);
+      let detail = response.statusText;
+      try {
+        const err = await response.json();
+        detail = err?.error?.message || detail;
+      } catch {
+        // keep statusText
+      }
+      throw new Error(`Gemini API error: ${detail}`);
     }
 
     const data = await response.json();

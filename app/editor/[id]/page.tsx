@@ -211,8 +211,11 @@ export default function EditorPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p>Loading document...</p>
+      <div className="flex h-screen items-center justify-center bg-aurora">
+        <div className="flex flex-col items-center gap-4 text-muted-foreground">
+          <span className="h-9 w-9 animate-spin rounded-full border-2 border-border border-t-primary" />
+          <p className="text-sm">Loading document…</p>
+        </div>
       </div>
     );
   }
@@ -220,14 +223,14 @@ export default function EditorPage() {
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-border">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4 flex-1">
+      <header className="sticky top-0 z-40 glass border-b border-border/60">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon-sm"
               onClick={() => router.push('/dashboard')}
-              className="gap-2"
+              aria-label="Back to dashboard"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -236,33 +239,37 @@ export default function EditorPage() {
               value={title}
               onChange={handleTitleChange}
               disabled={!isEditable}
-              className="flex-1 bg-transparent text-2xl font-bold text-foreground outline-none focus:underline disabled:cursor-not-allowed disabled:opacity-70"
-              placeholder="Document title"
+              className="min-w-0 flex-1 rounded-lg bg-transparent px-2 py-1 text-lg font-semibold text-foreground outline-none transition-colors hover:bg-muted/50 focus:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-70 sm:text-xl"
+              placeholder="Untitled document"
             />
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-2">
               {unsavedChanges && (
-                <span className="text-xs text-orange-600 font-medium">Unsaved</span>
+                <span className="hidden text-xs font-medium text-amber-600 dark:text-amber-400 sm:inline">
+                  Unsaved
+                </span>
               )}
-              {isOffline && (
-                <div className="flex items-center gap-1 m-4 text-xs text-orange-600 font-medium bg-orange-50 px-2 py-1 rounded">
+              {isOffline ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-400">
                   <WifiOff className="h-3 w-3" />
-                  Offline
-                </div>
-              )}
-              {isOnline && (
-                <div className="flex items-center gap-1 text-xs text-green-600 font-medium m-4">
+                  <span className="hidden sm:inline">Offline</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                   <Wifi className="h-3 w-3" />
-                  Connected
-                </div>
+                  <span className="hidden sm:inline">Connected</span>
+                </span>
               )}
             </div>
           </div>
-          
-          <div className="flex items-center gap-4">
-            {isConnected && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4" />
-                <span>{activeUsers.length} online</span>
+
+          <div className="flex shrink-0 items-center gap-2">
+            {isConnected && activeUsers.length > 0 && (
+              <div className="hidden items-center gap-1.5 rounded-full border border-border bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted-foreground sm:flex">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                </span>
+                {activeUsers.length} online
               </div>
             )}
 
@@ -275,14 +282,13 @@ export default function EditorPage() {
                 disabled={isOffline}
               >
                 <Share2 className="h-4 w-4" />
-                Share
+                <span className="hidden sm:inline">Share</span>
               </Button>
             )}
 
             <Button
               variant="outline"
               size="sm"
-              className="gap-2"
               onClick={() => setHistoryModalOpen(true)}
             >
               History
@@ -290,12 +296,12 @@ export default function EditorPage() {
 
             <Button
               size="sm"
-              className="gap-2"
+              className="gap-2 shadow-glow"
               onClick={handleSave}
               disabled={isSaving || !unsavedChanges || !isEditable}
             >
               <Save className="h-4 w-4" />
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? 'Saving…' : 'Save'}
             </Button>
           </div>
         </div>
@@ -303,9 +309,9 @@ export default function EditorPage() {
 
       {/* Editor */}
       <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-4xl px-6 py-8">
+        <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
           {!isEditable && (
-            <div className="mb-4 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-orange-700">
+            <div className="mb-4 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
               You have view-only access. Only document owners and editors can make changes.
             </div>
           )}
