@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import ToasterProvider from '@/components/ToasterProvider'
 import './globals.css'
 
 const inter = Inter({
@@ -33,6 +34,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} bg-background`}>
       <body className="antialiased font-sans">
         {children}
+        <ToasterProvider />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

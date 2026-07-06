@@ -9,6 +9,7 @@ import { useSocket } from '@/hooks/useSocket';
 import { useOffline } from '@/hooks/useOffline';
 import { Save, Share2, MoreVertical, Users, ChevronLeft, Cloud, CloudOff, Wifi, WifiOff } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toErrorMessage } from '@/lib/apiError';
 import RichTextEditor from '@/components/RichTextEditor';
 import ShareModal from '@/components/ShareModal';
 import VersionHistory from '@/components/VersionHistory';
@@ -185,7 +186,7 @@ export default function EditorPage() {
         toast.success('Document saved');
       }
     } catch (error) {
-      toast.error('Failed to save document');
+      toast.error(toErrorMessage(error, 'Failed to save document'));
     } finally {
       setIsSaving(false);
     }

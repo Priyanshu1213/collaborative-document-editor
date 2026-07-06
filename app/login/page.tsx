@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Mail, Lock, FileText, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { parseApiError, toErrorMessage, isValidEmail } from '@/lib/apiError';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -22,8 +23,15 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !password) {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || !password) {
       toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      toast.error('Please enter a valid email address');
       return;
     }
 
@@ -32,21 +40,25 @@ export default function LoginPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: trimmedEmail, password }),
       });
 
       if (!response.ok) {
-        throw new Error('Login failed');
+        throw new Error(await parseApiError(response, 'Invalid email or password'));
       }
 
       const data = await response.json();
+      if (!data?.token) {
+        throw new Error('Unexpected response from server. Please try again.');
+      }
+
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      toast.success('Login successful!');
+      toast.success(`Welcome back${data.user?.name ? `, ${data.user.name}` : ''}!`);
       router.push('/dashboard');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Login failed');
+      toast.error(toErrorMessage(error, 'Login failed'));
     } finally {
       setIsLoading(false);
     }

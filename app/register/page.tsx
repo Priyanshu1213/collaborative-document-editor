@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Mail, Lock, User, FileText, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { parseApiError, toErrorMessage, isValidEmail } from '@/lib/apiError';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -24,13 +25,21 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !email || !password || !confirmPassword) {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName || !trimmedEmail || !password || !confirmPassword) {
       toast.error('Please fill in all fields');
       return;
     }
 
-    if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+    if (trimmedName.length < 2) {
+      toast.error('Please enter your full name');
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      toast.error('Please enter a valid email address');
       return;
     }
 
@@ -39,26 +48,35 @@ export default function RegisterPage() {
       return;
     }
 
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password }),
       });
 
       if (!response.ok) {
-        throw new Error('Registration failed');
+        throw new Error(await parseApiError(response, 'Registration failed'));
       }
 
       const data = await response.json();
+      if (!data?.token) {
+        throw new Error('Unexpected response from server. Please try again.');
+      }
+
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      toast.success('Registration successful!');
+      toast.success('Account created — welcome aboard!');
       router.push('/dashboard');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Registration failed');
+      toast.error(toErrorMessage(error, 'Registration failed'));
     } finally {
       setIsLoading(false);
     }

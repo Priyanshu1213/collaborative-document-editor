@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { parseApiError, toErrorMessage } from '@/lib/apiError';
 import DashboardHeader from '@/components/DashboardHeader';
 import DocumentCard from '@/components/DocumentCard';
 import ShareModal from '@/components/ShareModal';
@@ -45,16 +46,24 @@ export default function DashboardPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) throw new Error('Failed to fetch documents');
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        toast.error('Your session has expired. Please sign in again.');
+        router.push('/login');
+        return;
+      }
+
+      if (!response.ok) throw new Error(await parseApiError(response, 'Failed to load documents'));
 
       const data = await response.json();
-      setDocuments(data);
+      setDocuments(Array.isArray(data) ? data : []);
     } catch (error) {
-      toast.error('Failed to load documents');
+      toast.error(toErrorMessage(error, 'Failed to load documents'));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -108,6 +117,7 @@ export default function DashboardPage() {
   };
 
   const handleCreateDocument = async () => {
+    const toastId = toast.loading('Creating document…');
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/documents`, {
@@ -119,17 +129,22 @@ export default function DashboardPage() {
         body: JSON.stringify({ title: 'Untitled Document' }),
       });
 
-      if (!response.ok) throw new Error('Failed to create document');
+      if (!response.ok) throw new Error(await parseApiError(response, 'Failed to create document'));
 
       const doc = await response.json();
+      toast.success('Document created', { id: toastId });
       router.push(`/editor/${doc._id}`);
     } catch (error) {
-      toast.error('Failed to create document');
+      toast.error(toErrorMessage(error, 'Failed to create document'), { id: toastId });
     }
   };
 
   const handleDeleteDocument = async (docId: string) => {
-    if (!confirm('Are you sure you want to delete this document?')) return;
+    if (!confirm('Are you sure you want to delete this document? This cannot be undone.')) return;
+
+    // Optimistic UI with rollback on failure
+    const previous = documents;
+    setDocuments((docs) => docs.filter((doc) => doc._id !== docId));
 
     try {
       const token = localStorage.getItem('token');
@@ -141,12 +156,12 @@ export default function DashboardPage() {
         }
       );
 
-      if (!response.ok) throw new Error('Failed to delete document');
+      if (!response.ok) throw new Error(await parseApiError(response, 'Failed to delete document'));
 
-      setDocuments(documents.filter((doc) => doc._id !== docId));
       toast.success('Document deleted');
     } catch (error) {
-      toast.error('Failed to delete document');
+      setDocuments(previous); // rollback
+      toast.error(toErrorMessage(error, 'Failed to delete document'));
     }
   };
 
@@ -170,13 +185,13 @@ export default function DashboardPage() {
         }
       );
 
-      if (!response.ok) throw new Error('Failed to share document');
+      if (!response.ok) throw new Error(await parseApiError(response, 'Failed to share document'));
 
       await fetchDocuments();
       setShareModalOpen(false);
       toast.success('Document shared successfully');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to share document');
+      toast.error(toErrorMessage(error, 'Failed to share document'));
     }
   };
 
