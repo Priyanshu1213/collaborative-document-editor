@@ -63,7 +63,7 @@ export default function DashboardHeader({ userName, userEmail, onLogout, onSearc
             </span>
             <div className="min-w-0">
               <h1 className="truncate text-base font-semibold tracking-tight text-foreground">
-                House of EdTech
+                DocVerse
               </h1>
               <p className="truncate text-xs text-muted-foreground">Welcome back, {userName}</p>
             </div>
