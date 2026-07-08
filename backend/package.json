@@ -1,7 +1,7 @@
 {
   "name": "edtech-backend",
   "version": "1.0.0",
-  "description": "Backend for House of EdTech collaborative document editor",
+  "description": "Backend for DocVerse collaborative document editor",
   "main": "server.js",
   "type": "module",
   "scripts": {

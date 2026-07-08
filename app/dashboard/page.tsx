@@ -292,7 +292,7 @@ export default function DashboardPage() {
               <p className="mb-6 max-w-sm text-muted-foreground">
                 {searchQuery
                   ? 'Try adjusting your search query to find what you are looking for.'
-                  : 'Create your first document to get started with House of EdTech.'}
+                  : 'Create your first document to get started with DocVerse.'}
               </p>
               {!searchQuery && (
                 <Button onClick={handleCreateDocument} size="lg" className="gap-2 shadow-glow">

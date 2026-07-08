@@ -1,4 +1,4 @@
-# House of EdTech - Complete Feature List
+# DocVerse - Complete Feature List
 
 ## Overview
 

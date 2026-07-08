@@ -1,4 +1,4 @@
-# House of EdTech - Frontend
+# DocVerse - Frontend
 
 A collaborative document editor built with **Next.js 16**, **React 19**, and **TailwindCSS**.
 

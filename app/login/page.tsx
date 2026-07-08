@@ -79,7 +79,7 @@ export default function LoginPage() {
             <FileText className="h-6 w-6" />
           </span>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome back</h1>
-          <p className="mt-1.5 text-muted-foreground">Sign in to continue to House of EdTech</p>
+          <p className="mt-1.5 text-muted-foreground">Sign in to continue to DocVerse</p>
         </div>
 
         <div className="rounded-2xl border border-border bg-card/80 p-6 shadow-elevated backdrop-blur sm:p-8">

@@ -2,7 +2,7 @@
 
 ## Overview
 
-House of EdTech provides complete offline-first functionality. Users can edit documents without an internet connection, and all changes are automatically synced when they come back online.
+DocVerse provides complete offline-first functionality. Users can edit documents without an internet connection, and all changes are automatically synced when they come back online.
 
 ## How It Works
 

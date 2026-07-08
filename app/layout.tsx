@@ -11,7 +11,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'House of EdTech — Collaborative Document Editor',
+  title: 'DocVerse — Collaborative Document Editor',
   description:
     'A collaborative document editor with real-time collaboration, offline support, and AI features',
   generator: 'v0.app',

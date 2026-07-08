@@ -1,6 +1,6 @@
-# House of EdTech - Backend
+# DocVerse - Backend
 
-A Node.js + Express.js backend for the House of EdTech collaborative document editor with MongoDB database.
+A Node.js + Express.js backend for the DocVerse collaborative document editor with MongoDB database.
 
 ## Features
 

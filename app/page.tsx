@@ -88,7 +88,7 @@ export default function Home() {
               <FileText className="h-4.5 w-4.5" />
             </span>
             <span className="text-lg font-semibold tracking-tight text-foreground">
-              House of EdTech
+              DocVerse
             </span>
           </Link>
           <div className="flex items-center gap-2">
@@ -173,9 +173,9 @@ export default function Home() {
             <span className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-gradient text-white">
               <FileText className="h-3.5 w-3.5" />
             </span>
-            <span>House of EdTech</span>
+            <span>DocVerse</span>
           </div>
-          <p>&copy; 2025 House of EdTech. All rights reserved.</p>
+          <p>&copy; 2025 DocVerse. All rights reserved.</p>
         </div>
       </footer>
     </div>
